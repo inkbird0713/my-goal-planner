@@ -2,10 +2,10 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>반짝이는 밤하늘 플래너</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>나의 성장 플래너 - Pro</title>
     <style>
-        /* (CSS 스타일 정의 - 기존과 동일) */
+        /* 기본 레이아웃 및 배경 */
         body { 
             font-family: 'Pretendard', sans-serif; 
             background: radial-gradient(circle at center, #1b2735 0%, #090a0f 100%); 
@@ -19,6 +19,7 @@
             min-height: 100vh;
             overflow-x: hidden;
             position: relative;
+            touch-action: pan-y; /* 스크롤은 허용, 드래그는 커스텀 */
         }
 
         .star {
@@ -69,21 +70,33 @@
         button { background: #e94560; color: white; cursor: pointer; font-weight: bold; transition: 0.2s; }
         button:hover { background: #ff4d6d; transform: scale(1.05); }
 
-        .goal-card { background: rgba(22, 33, 62, 0.7); backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 15px; margin-bottom: 20px; position: relative; transition: 0.3s; }
+        /* 목표 리스트 및 카드 */
+        #goalList { display: flex; flex-direction: column; gap: 15px; }
+        .goal-card { 
+            background: rgba(22, 33, 62, 0.7); 
+            backdrop-filter: blur(5px); 
+            border: 1px solid rgba(255, 255, 255, 0.05); 
+            padding: 20px; border-radius: 15px; 
+            position: relative; transition: transform 0.2s, opacity 0.2s; 
+            user-select: none;
+            touch-action: none; /* 카드 내 드래그를 위해 기본 터치 액션 제한 */
+        }
+        .goal-card.dragging { opacity: 0.5; transform: scale(1.02); z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .goal-card.completed { border: 2px solid #f9d71c; box-shadow: 0 0 20px rgba(249, 215, 28, 0.3); }
-        .delete-btn { position: absolute; top: 15px; right: 15px; background: none; color: #888; border: none; cursor: pointer; font-size: 18px; }
         
-        .date-info { font-size: 0.75rem; color: #aaa; margin-bottom: 5px; }
+        .delete-btn { position: absolute; top: 15px; right: 15px; background: none; color: #888; border: none; cursor: pointer; font-size: 18px; z-index: 20; }
+        
+        .date-info { font-size: 0.75rem; color: #aaa; margin-bottom: 5px; pointer-events: none; }
         .comp-date-label { color: #f9d71c; font-weight: bold; }
 
-        .progress-area { height: 50px; background: rgba(255,255,255,0.05); border-radius: 25px; margin: 15px 0; position: relative; display: flex; align-items: center; padding: 0 15px; overflow: hidden; }
+        .progress-area { height: 50px; background: rgba(255,255,255,0.05); border-radius: 25px; margin: 15px 0; position: relative; display: flex; align-items: center; padding: 0 15px; overflow: hidden; pointer-events: none; }
         .moving-icon { position: absolute; font-size: 24px; transition: left 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 3; filter: drop-shadow(0 0 5px rgba(255,255,255,0.5)); }
         
         .item-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-        .item { font-size: 28px; cursor: pointer; filter: grayscale(100%) opacity(0.3); transition: 0.2s; user-select: none; }
+        .item { font-size: 28px; cursor: pointer; filter: grayscale(100%) opacity(0.3); transition: 0.2s; user-select: none; position: relative; z-index: 30; }
         .item.active { filter: grayscale(0%) opacity(1); transform: scale(1.1); }
         
-        .memo-input { width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid #444; color: #fff; padding: 10px; border-radius: 8px; margin-top: 15px; font-size: 0.9rem; }
+        .memo-input { width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid #444; color: #fff; padding: 10px; border-radius: 8px; margin-top: 15px; font-size: 0.9rem; position: relative; z-index: 30; }
     </style>
 </head>
 <body>
@@ -94,7 +107,7 @@
 
     <div class="container">
         <div class="stats-dashboard">
-            <div style="font-weight: bold;">🏆 달성률 <span id="percent-text">0%</span></div>
+            <div style="font-weight: bold;">🏆 전체 달성률 <span id="percent-text">0%</span></div>
             <div class="progress-total-bg"><div class="progress-total-fill" id="total-bar"></div></div>
             <div style="display:flex; justify-content: space-between; font-size: 0.85rem; color: #ccc;">
                 <span>전체 목표: <span id="total-goals">0</span>개</span>
@@ -115,6 +128,7 @@
                 <option value="garden">🦋 비밀의 정원</option>
                 <option value="baking">🧁 달콤한 베이킹</option>
                 <option value="princess">👑 공주님의 성</option>
+                <option value="space">🚀 우주여행</option>
             </select>
             <button onclick="createNewGoal()">추가</button>
         </div>
@@ -123,10 +137,10 @@
     </div>
 
     <script>
-        // (별 배경 생성 스크립트 - 기존과 동일)
+        // 1. 별 배경 생성
         function createStars() {
             const container = document.getElementById('stars-container');
-            for (let i = 0; i < 100; i++) {
+            for (let i = 0; i < 80; i++) {
                 const star = document.createElement('div');
                 star.className = 'star';
                 const size = Math.random() * 3;
@@ -140,22 +154,20 @@
         }
         createStars();
 
-        // 폭죽 효과 (특정 좌표에서 시작)
+        // 2. 폭죽 효과
         function launchConfetti(emoji, x, y) {
-            const count = 30;
+            const count = 25;
             for (let i = 0; i < count; i++) {
                 const c = document.createElement('div');
                 c.className = 'confetti';
                 c.innerText = emoji;
                 c.style.left = `${x}px`;
                 c.style.top = `${y}px`;
-
                 const angle = Math.random() * Math.PI * 2;
-                const dist = Math.random() * 250 + 50;
+                const dist = Math.random() * 200 + 50;
                 c.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
                 c.style.setProperty('--dy', `${Math.sin(angle) * dist}px`);
                 c.style.animationDuration = `${Math.random() * 1 + 0.5}s`;
-
                 document.body.appendChild(c);
                 c.onanimationend = () => c.remove();
             }
@@ -164,59 +176,114 @@
         const themes = {
             dog: { start: '🌳', moving: '🐕', end: '🏠', item: '🐾', reverse: true },
             cat: { start: '🐟', moving: '🐈', end: '📦', item: '🧶', reverse: true },
-            water: { start: '🌵', moving: '🏃', end: '🌊', item: '💧', reverse: true },
-            flower: { start: '🌱', moving: '🚶‍♀️', end: '🌻', item: '🌸', reverse: true },
-            love: { start: '💌', moving: '🏃‍♂️', end: '💘', item: '❤️', reverse: true },
-            nursery: { start: '🍼', moving: '🧸', end: '🏡', item: '🎈', reverse: true },  // 아기자기한 방
-            garden: { start: '🌿', moving: '🦋', end: '🌸', item: '🌷', reverse: true },   // 비밀의 정원
-            baking: { start: '🥚', moving: '👩‍🍳', end: '🎂', item: '🧁', reverse: true },   // 달콤한 베이킹
-            princess: { start: '🏰', moving: '👸', end: '👑', item: '💎', reverse: true },  // 공주님의 성
+            water: { start: '🌊', moving: '🏃', end: '🌵', item: '💧', reverse: true },
+            flower: { start: '🌻', moving: '🚶‍♀️', end: '🌱', item: '🌸', reverse: true },
+            love: { start: '💘', moving: '🏃‍♂️', end: '💌', item: '❤️', reverse: true },
+            nursery: { start: '🍼', moving: '🧸', end: '🏡', item: '🎈', reverse: true },
+            garden: { start: '🌿', moving: '🦋', end: '🌸', item: '🌷', reverse: true },
+            baking: { start: '🥚', moving: '👩‍🍳', end: '🎂', item: '🧁', reverse: true },
+            princess: { start: '🏰', moving: '👸', end: '👑', item: '💎', reverse: true },
+            space: { start: '🌑', moving: '🚀', end: '🌕', item: '⭐', reverse: false }
         };
 
         let goals = JSON.parse(localStorage.getItem('myGoals')) || [];
+        let dragItem = null;
 
+        // 3. 목표 추가
         function createNewGoal() {
             const title = document.getElementById('goalTitle').value;
             const count = parseInt(document.getElementById('goalCount').value);
             const theme = document.getElementById('themeSelect').value;
             if(!title || !count) return alert("내용을 채워주세요!");
+            
             goals.push({
                 id: Date.now(), title, total: count, current: 0, theme,
                 checked: new Array(count).fill(false), memo: "",
                 startDate: new Date().toISOString().split('T')[0], compDate: ""
             });
-            updateAndRender();
+            saveAndRender();
             document.getElementById('goalTitle').value = "";
+            document.getElementById('goalCount').value = "";
         }
 
-        function toggleItem(id, idx) {
+        // 4. 아이템 토글
+        function toggleItem(e, id, idx) {
+            e.stopPropagation();
             const g = goals.find(x => x.id === id);
             const wasDone = g.current === g.total;
             g.checked[idx] = !g.checked[idx];
             g.current = g.checked.filter(v => v).length;
-            const isDone = g.current === g.total;
-
-            if (isDone && !wasDone) {
+            
+            if (g.current === g.total && !wasDone) {
                 g.compDate = new Date().toISOString().split('T')[0];
-                
-                // [수정된 부분] 폭죽 위치 계산: 클릭한 카드의 시작 이모지 찾기
-                const card = document.getElementById(`card-${id}`);
-                const startNode = card.querySelector('.track-start-node'); // 시작 이모지 요소 찾기
-                const rect = startNode.getBoundingClientRect();
-                
-                // 폭죽 발사! (시작 이모지 중앙 좌표)
-                launchConfetti(themes[g.theme].end, rect.left + rect.width/2, rect.top + rect.height/2);
-            } else if (!isDone) {
+                launchConfetti(themes[g.theme].end, e.clientX, e.clientY);
+            } else if (g.current !== g.total) {
                 g.compDate = "";
             }
-            updateAndRender();
+            saveAndRender();
         }
 
-        function updateAndRender() {
-            goals.sort((a, b) => {
-                const aD = a.current === a.total; const bD = b.current === b.total;
-                return aD !== bD ? (aD ? 1 : -1) : b.id - a.id;
+        // 5. 드래그 앤 드롭 (마우스 & 터치 통합)
+        function initDragEvents(card) {
+            // 마우스 드래그
+            card.addEventListener('mousedown', (e) => {
+                if(e.target.closest('.item, .delete-btn, .memo-input')) return;
+                startDrag(card);
             });
+
+            // 터치 드래그
+            card.addEventListener('touchstart', (e) => {
+                if(e.target.closest('.item, .delete-btn, .memo-input')) return;
+                startDrag(card);
+            }, {passive: false});
+        }
+
+        function startDrag(card) {
+            dragItem = card;
+            card.classList.add('dragging');
+        }
+
+        document.addEventListener('mousemove', handleMove);
+        document.addEventListener('touchmove', (e) => handleMove(e.touches[0]), {passive: false});
+
+        function handleMove(e) {
+            if(!dragItem) return;
+            if(e.preventDefault) e.preventDefault();
+            
+            const list = document.getElementById('goalList');
+            const afterElement = getDragAfterElement(list, e.clientY);
+            if (afterElement == null) list.appendChild(dragItem);
+            else list.insertBefore(dragItem, afterElement);
+        }
+
+        document.addEventListener('mouseup', endDrag);
+        document.addEventListener('touchend', endDrag);
+
+        function endDrag() {
+            if(!dragItem) return;
+            dragItem.classList.remove('dragging');
+            dragItem = null;
+            
+            // 변경된 순서 반영하여 데이터 저장
+            const currentIds = [...document.querySelectorAll('.goal-card')].map(c => parseInt(c.id.replace('card-', '')));
+            const newGoals = currentIds.map(id => goals.find(g => g.id === id));
+            goals = newGoals;
+            localStorage.setItem('myGoals', JSON.stringify(goals));
+            updateStats();
+        }
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.goal-card:not(.dragging)')];
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
+                else return closest;
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        // 6. 렌더링 및 통계
+        function saveAndRender() {
             localStorage.setItem('myGoals', JSON.stringify(goals));
             const list = document.getElementById('goalList');
             list.innerHTML = '';
@@ -226,33 +293,41 @@
                 const isComp = g.current === g.total;
                 const pos = t.reverse ? 85 - (g.current/g.total)*77 : 8 + (g.current/g.total)*77;
 
-                list.innerHTML += `
+                const cardHtml = `
                     <div class="goal-card ${isComp ? 'completed' : ''}" id="card-${g.id}">
-                        <button class="delete-btn" onclick="removeGoal(${g.id})">✕</button>
+                        <button class="delete-btn" onclick="removeGoal(event, ${g.id})">✕</button>
                         <div class="date-info">시작: ${g.startDate}${isComp ? ` <span class="comp-date-label">| 완료: ${g.compDate}</span>` : ''}</div>
-                        <h3 style="margin:0;">${g.title}</h3>
+                        <h3 style="margin:0; pointer-events:none;">${g.title}</h3>
                         <div class="progress-area">
-                            <span class="track-start-node">${t.reverse ? t.end : t.start}</span>
+                            <span>${t.reverse ? t.end : t.start}</span>
                             <span class="moving-icon" style="left:${pos}%">${t.moving}</span>
                             <div style="flex:1"></div>
                             <span>${t.reverse ? t.start : t.end}</span>
                         </div>
-                        <div class="item-container">${g.checked.map((c, i) => `<span class="item ${c ? 'active' : ''}" onclick="toggleItem(${g.id}, ${i})">${t.item}</span>`).join('')}</div>
-                        ${isComp ? `<input type="text" class="memo-input" placeholder="달성 소감..." value="${g.memo}" oninput="updateMemo(${g.id}, this.value)">` : ''}
+                        <div class="item-container">${g.checked.map((c, i) => `<span class="item ${c ? 'active' : ''}" onclick="toggleItem(event, ${g.id}, ${i})">${t.item}</span>`).join('')}</div>
+                        ${isComp ? `<input type="text" class="memo-input" placeholder="달성 소감..." value="${g.memo}" oninput="updateMemo(${g.id}, this.value)" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">` : ''}
                     </div>`;
+                list.insertAdjacentHTML('beforeend', cardHtml);
+                initDragEvents(document.getElementById(`card-${g.id}`));
             });
+            updateStats();
+        }
 
-            const compCnt = goals.filter(x => x.current === x.total && x.total > 0).length;
-            const per = goals.length ? Math.round((compCnt / goals.length) * 100) : 0;
-            document.getElementById('total-goals').innerText = goals.length;
-            document.getElementById('comp-goals').innerText = compCnt;
+        function updateStats() {
+            const total = goals.length;
+            const completed = goals.filter(g => g.current === g.total && g.total > 0).length;
+            const per = total ? Math.round((completed / total) * 100) : 0;
+            
+            document.getElementById('total-goals').innerText = total;
+            document.getElementById('comp-goals').innerText = completed;
             document.getElementById('percent-text').innerText = per + "%";
             document.getElementById('total-bar').style.width = per + "%";
         }
 
         function updateMemo(id, val) { goals.find(x => x.id === id).memo = val; localStorage.setItem('myGoals', JSON.stringify(goals)); }
-        function removeGoal(id) { if(confirm("삭제할까요?")) { goals = goals.filter(x => x.id !== id); updateAndRender(); } }
-        updateAndRender();
+        function removeGoal(e, id) { e.stopPropagation(); if(confirm("삭제할까요?")) { goals = goals.filter(x => x.id !== id); saveAndRender(); } }
+
+        saveAndRender();
     </script>
 </body>
 </html>
