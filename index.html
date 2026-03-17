@@ -111,6 +111,10 @@
                 <option value="water">💧 물 마시기</option>
                 <option value="flower">🌸 꽃 산책</option>
                 <option value="love">💖 사랑</option>
+                <option value="nursery">🧸 아기자기한 방</option>
+                <option value="garden">🦋 비밀의 정원</option>
+                <option value="baking">🧁 달콤한 베이킹</option>
+                <option value="princess">👑 공주님의 성</option>
             </select>
             <button onclick="createNewGoal()">추가</button>
         </div>
@@ -163,6 +167,10 @@
             water: { start: '🌵', moving: '🏃', end: '🌊', item: '💧', reverse: true },
             flower: { start: '🌱', moving: '🚶‍♀️', end: '🌻', item: '🌸', reverse: true },
             love: { start: '💌', moving: '🏃‍♂️', end: '💘', item: '❤️', reverse: true },
+            nursery: { start: '🍼', moving: '🧸', end: '🏡', item: '🎈', reverse: true },  // 아기자기한 방
+            garden: { start: '🌿', moving: '🦋', end: '🌸', item: '🌷', reverse: true },   // 비밀의 정원
+            baking: { start: '🥚', moving: '👩‍🍳', end: '🎂', item: '🧁', reverse: true },   // 달콤한 베이킹
+            princess: { start: '🏰', moving: '👸', end: '👑', item: '💎', reverse: true },  // 공주님의 성
         };
 
         let goals = JSON.parse(localStorage.getItem('myGoals')) || [];
