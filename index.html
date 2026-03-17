@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>반짝이는 밤하늘 플래너</title>
+    <style>
+        /* (CSS 스타일 정의 - 기존과 동일) */
+        body { 
+            font-family: 'Pretendard', sans-serif; 
+            background: radial-gradient(circle at center, #1b2735 0%, #090a0f 100%); 
+            background-attachment: fixed;
+            color: #fff; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 20px; 
+            margin: 0; 
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .star {
+            position: absolute;
+            background-color: #fff;
+            border-radius: 50%;
+            animation: twinkle linear infinite; 
+            opacity: 0;
+            z-index: 1;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0; transform: scale(0.5); }
+            50% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0.5); }
+        }
+
+        /* 폭죽 스타일 */
+        .confetti {
+            position: fixed;
+            font-size: 2rem;
+            user-select: none;
+            z-index: 2000;
+            pointer-events: none;
+            animation: confetti-fall linear forwards;
+        }
+
+        @keyframes confetti-fall {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.5); opacity: 0; }
+        }
+
+        .container { width: 95%; max-width: 600px; position: relative; z-index: 10; }
+        
+        .stats-dashboard { 
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px; border-radius: 15px; margin-bottom: 20px; 
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+        .progress-total-bg { background: rgba(255,255,255,0.1); height: 12px; border-radius: 6px; overflow: hidden; margin: 10px 0; }
+        .progress-total-fill { background: #f9d71c; height: 100%; width: 0%; transition: width 0.5s ease; box-shadow: 0 0 15px #f9d71c; }
+        
+        .input-group { background: rgba(22, 33, 62, 0.8); backdrop-filter: blur(5px); padding: 20px; border-radius: 15px; margin-bottom: 20px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.05); }
+        input, select, button { padding: 10px; border-radius: 5px; border: none; font-size: 14px; }
+        input, select { background: rgba(255, 255, 255, 0.9); color: #333; }
+        button { background: #e94560; color: white; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        button:hover { background: #ff4d6d; transform: scale(1.05); }
+
+        .goal-card { background: rgba(22, 33, 62, 0.7); backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 15px; margin-bottom: 20px; position: relative; transition: 0.3s; }
+        .goal-card.completed { border: 2px solid #f9d71c; box-shadow: 0 0 20px rgba(249, 215, 28, 0.3); }
+        .delete-btn { position: absolute; top: 15px; right: 15px; background: none; color: #888; border: none; cursor: pointer; font-size: 18px; }
+        
+        .date-info { font-size: 0.75rem; color: #aaa; margin-bottom: 5px; }
+        .comp-date-label { color: #f9d71c; font-weight: bold; }
+
+        .progress-area { height: 50px; background: rgba(255,255,255,0.05); border-radius: 25px; margin: 15px 0; position: relative; display: flex; align-items: center; padding: 0 15px; overflow: hidden; }
+        .moving-icon { position: absolute; font-size: 24px; transition: left 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 3; filter: drop-shadow(0 0 5px rgba(255,255,255,0.5)); }
+        
+        .item-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+        .item { font-size: 28px; cursor: pointer; filter: grayscale(100%) opacity(0.3); transition: 0.2s; user-select: none; }
+        .item.active { filter: grayscale(0%) opacity(1); transform: scale(1.1); }
+        
+        .memo-input { width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid #444; color: #fff; padding: 10px; border-radius: 8px; margin-top: 15px; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+    <div id="stars-container"></div>
+
+    <h2>💖 나의 성장 플래너</h2>
+
+    <div class="container">
+        <div class="stats-dashboard">
+            <div style="font-weight: bold;">🏆 달성률 <span id="percent-text">0%</span></div>
+            <div class="progress-total-bg"><div class="progress-total-fill" id="total-bar"></div></div>
+            <div style="display:flex; justify-content: space-between; font-size: 0.85rem; color: #ccc;">
+                <span>전체 목표: <span id="total-goals">0</span>개</span>
+                <span>완료 목표: <span id="comp-goals">0</span>개</span>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <input type="text" id="goalTitle" placeholder="목표 이름" style="flex:1;">
+            <input type="number" id="goalCount" placeholder="개수" style="width:50px;">
+            <select id="themeSelect">
+                <option value="dog">🐕 강아지 산책</option>
+                <option value="cat">🐈 고양이</option>
+                <option value="water">💧 물 마시기</option>
+                <option value="flower">🌸 꽃 산책</option>
+                <option value="love">💖 사랑</option>
+                <option value="space">🚀 우주</option>
+            </select>
+            <button onclick="createNewGoal()">추가</button>
+        </div>
+
+        <div id="goalList"></div>
+    </div>
+
+    <script>
+        // (별 배경 생성 스크립트 - 기존과 동일)
+        function createStars() {
+            const container = document.getElementById('stars-container');
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                const size = Math.random() * 3;
+                star.style.width = star.style.height = `${size}px`;
+                star.style.top = `${Math.random() * 100}vh`;
+                star.style.left = `${Math.random() * 100}vw`;
+                star.style.animationDuration = `${Math.random() * 3 + 2}s`;
+                star.style.animationDelay = `${Math.random() * 5}s`;
+                container.appendChild(star);
+            }
+        }
+        createStars();
+
+        // 폭죽 효과 (특정 좌표에서 시작)
+        function launchConfetti(emoji, x, y) {
+            const count = 30;
+            for (let i = 0; i < count; i++) {
+                const c = document.createElement('div');
+                c.className = 'confetti';
+                c.innerText = emoji;
+                c.style.left = `${x}px`;
+                c.style.top = `${y}px`;
+
+                const angle = Math.random() * Math.PI * 2;
+                const dist = Math.random() * 250 + 50;
+                c.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
+                c.style.setProperty('--dy', `${Math.sin(angle) * dist}px`);
+                c.style.animationDuration = `${Math.random() * 1 + 0.5}s`;
+
+                document.body.appendChild(c);
+                c.onanimationend = () => c.remove();
+            }
+        }
+
+        const themes = {
+            dog: { start: '🌳', moving: '🐕', end: '🏠', item: '🐾', reverse: true },
+            cat: { start: '🐟', moving: '🐈', end: '📦', item: '🧶', reverse: true },
+            water: { start: '🌵', moving: '🏃', end: '🌊', item: '💧', reverse: true },
+            flower: { start: '🌱', moving: '🚶‍♀️', end: '🌻', item: '🌸', reverse: true },
+            love: { start: '💌', moving: '🏃‍♂️', end: '💘', item: '❤️', reverse: true },
+            space: { start: '🌑', moving: '🚀', end: '🌕', item: '⭐', reverse: false }
+        };
+
+        let goals = JSON.parse(localStorage.getItem('myGoals')) || [];
+
+        function createNewGoal() {
+            const title = document.getElementById('goalTitle').value;
+            const count = parseInt(document.getElementById('goalCount').value);
+            const theme = document.getElementById('themeSelect').value;
+            if(!title || !count) return alert("내용을 채워주세요!");
+            goals.push({
+                id: Date.now(), title, total: count, current: 0, theme,
+                checked: new Array(count).fill(false), memo: "",
+                startDate: new Date().toISOString().split('T')[0], compDate: ""
+            });
+            updateAndRender();
+            document.getElementById('goalTitle').value = "";
+        }
+
+        function toggleItem(id, idx) {
+            const g = goals.find(x => x.id === id);
+            const wasDone = g.current === g.total;
+            g.checked[idx] = !g.checked[idx];
+            g.current = g.checked.filter(v => v).length;
+            const isDone = g.current === g.total;
+
+            if (isDone && !wasDone) {
+                g.compDate = new Date().toISOString().split('T')[0];
+                
+                // [수정된 부분] 폭죽 위치 계산: 클릭한 카드의 시작 이모지 찾기
+                const card = document.getElementById(`card-${id}`);
+                const startNode = card.querySelector('.track-start-node'); // 시작 이모지 요소 찾기
+                const rect = startNode.getBoundingClientRect();
+                
+                // 폭죽 발사! (시작 이모지 중앙 좌표)
+                launchConfetti(themes[g.theme].end, rect.left + rect.width/2, rect.top + rect.height/2);
+            } else if (!isDone) {
+                g.compDate = "";
+            }
+            updateAndRender();
+        }
+
+        function updateAndRender() {
+            goals.sort((a, b) => {
+                const aD = a.current === a.total; const bD = b.current === b.total;
+                return aD !== bD ? (aD ? 1 : -1) : b.id - a.id;
+            });
+            localStorage.setItem('myGoals', JSON.stringify(goals));
+            const list = document.getElementById('goalList');
+            list.innerHTML = '';
+            
+            goals.forEach(g => {
+                const t = themes[g.theme];
+                const isComp = g.current === g.total;
+                const pos = t.reverse ? 85 - (g.current/g.total)*77 : 8 + (g.current/g.total)*77;
+
+                list.innerHTML += `
+                    <div class="goal-card ${isComp ? 'completed' : ''}" id="card-${g.id}">
+                        <button class="delete-btn" onclick="removeGoal(${g.id})">✕</button>
+                        <div class="date-info">시작: ${g.startDate}${isComp ? ` <span class="comp-date-label">| 완료: ${g.compDate}</span>` : ''}</div>
+                        <h3 style="margin:0;">${g.title}</h3>
+                        <div class="progress-area">
+                            <span class="track-start-node">${t.reverse ? t.end : t.start}</span>
+                            <span class="moving-icon" style="left:${pos}%">${t.moving}</span>
+                            <div style="flex:1"></div>
+                            <span>${t.reverse ? t.start : t.end}</span>
+                        </div>
+                        <div class="item-container">${g.checked.map((c, i) => `<span class="item ${c ? 'active' : ''}" onclick="toggleItem(${g.id}, ${i})">${t.item}</span>`).join('')}</div>
+                        ${isComp ? `<input type="text" class="memo-input" placeholder="달성 소감..." value="${g.memo}" oninput="updateMemo(${g.id}, this.value)">` : ''}
+                    </div>`;
+            });
+
+            const compCnt = goals.filter(x => x.current === x.total && x.total > 0).length;
+            const per = goals.length ? Math.round((compCnt / goals.length) * 100) : 0;
+            document.getElementById('total-goals').innerText = goals.length;
+            document.getElementById('comp-goals').innerText = compCnt;
+            document.getElementById('percent-text').innerText = per + "%";
+            document.getElementById('total-bar').style.width = per + "%";
+        }
+
+        function updateMemo(id, val) { goals.find(x => x.id === id).memo = val; localStorage.setItem('myGoals', JSON.stringify(goals)); }
+        function removeGoal(id) { if(confirm("삭제할까요?")) { goals = goals.filter(x => x.id !== id); updateAndRender(); } }
+        updateAndRender();
+    </script>
+</body>
+</html>
