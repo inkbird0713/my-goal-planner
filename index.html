@@ -3,108 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>나의 성장 플래너 - Pro</title>
+    <title>나의 성장 플래너 - Wedding Edition</title>
     <style>
-        /* 기본 레이아웃 및 배경 */
         body { 
             font-family: 'Pretendard', sans-serif; 
             background: radial-gradient(circle at center, #1b2735 0%, #090a0f 100%); 
             background-attachment: fixed;
-            color: #fff; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            padding: 20px; 
-            margin: 0; 
-            min-height: 100vh;
-            overflow-x: hidden;
-            position: relative;
-            touch-action: pan-y; /* 스크롤은 허용, 드래그는 커스텀 */
+            color: #fff; display: flex; flex-direction: column; align-items: center; 
+            padding: 20px; margin: 0; min-height: 100vh; overflow-x: hidden; position: relative; touch-action: pan-y; 
         }
-
-        .star {
-            position: absolute;
-            background-color: #fff;
-            border-radius: 50%;
-            animation: twinkle linear infinite; 
-            opacity: 0;
-            z-index: 1;
-        }
-
-        @keyframes twinkle {
-            0% { opacity: 0; transform: scale(0.5); }
-            50% { opacity: 1; transform: scale(1); }
-            100% { opacity: 0; transform: scale(0.5); }
-        }
+        /* 별 배경 스타일 */
+        .star { position: absolute; background-color: #fff; border-radius: 50%; animation: twinkle linear infinite; opacity: 0; z-index: 1; }
+        @keyframes twinkle { 0% { opacity: 0; transform: scale(0.5); } 50% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(0.5); } }
 
         /* 폭죽 스타일 */
-        .confetti {
-            position: fixed;
-            font-size: 2rem;
-            user-select: none;
-            z-index: 2000;
-            pointer-events: none;
-            animation: confetti-fall linear forwards;
-        }
-
-        @keyframes confetti-fall {
-            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-            100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.5); opacity: 0; }
+        .confetti { position: fixed; font-size: 1.8rem; user-select: none; z-index: 2000; pointer-events: none; animation: confetti-fall linear forwards; }
+        @keyframes confetti-fall { 
+            0% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; } 
+            100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.5) rotate(360deg); opacity: 0; } 
         }
 
         .container { width: 95%; max-width: 600px; position: relative; z-index: 10; }
-        
-        .stats-dashboard { 
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 20px; border-radius: 15px; margin-bottom: 20px; 
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-        }
+        .stats-dashboard { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px; }
         .progress-total-bg { background: rgba(255,255,255,0.1); height: 12px; border-radius: 6px; overflow: hidden; margin: 10px 0; }
         .progress-total-fill { background: #f9d71c; height: 100%; width: 0%; transition: width 0.5s ease; box-shadow: 0 0 15px #f9d71c; }
         
-        .input-group { background: rgba(22, 33, 62, 0.8); backdrop-filter: blur(5px); padding: 20px; border-radius: 15px; margin-bottom: 20px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.05); }
+        .input-group { background: rgba(22, 33, 62, 0.8); backdrop-filter: blur(5px); padding: 20px; border-radius: 15px; margin-bottom: 20px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
         input, select, button { padding: 10px; border-radius: 5px; border: none; font-size: 14px; }
-        input, select { background: rgba(255, 255, 255, 0.9); color: #333; }
         button { background: #e94560; color: white; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        button:hover { background: #ff4d6d; transform: scale(1.05); }
 
-        /* 목표 리스트 및 카드 */
-        #goalList { display: flex; flex-direction: column; gap: 15px; }
+        #goalList { display: flex; flex-direction: column; gap: 15px; width: 100%; }
         .goal-card { 
-            background: rgba(22, 33, 62, 0.7); 
-            backdrop-filter: blur(5px); 
-            border: 1px solid rgba(255, 255, 255, 0.05); 
-            padding: 20px; border-radius: 15px; 
-            position: relative; transition: transform 0.2s, opacity 0.2s; 
-            user-select: none;
-            touch-action: none; /* 카드 내 드래그를 위해 기본 터치 액션 제한 */
+            background: rgba(22, 33, 62, 0.7); backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.05); 
+            padding: 20px; border-radius: 15px; position: relative; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s; 
+            user-select: none; touch-action: none; 
         }
         .goal-card.dragging { opacity: 0.5; transform: scale(1.02); z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .goal-card.completed { border: 2px solid #f9d71c; box-shadow: 0 0 20px rgba(249, 215, 28, 0.3); }
+        .goal-card.completed { border: 2px solid #f9d71c; }
         
         .delete-btn { position: absolute; top: 15px; right: 15px; background: none; color: #888; border: none; cursor: pointer; font-size: 18px; z-index: 20; }
-        
-        .date-info { font-size: 0.75rem; color: #aaa; margin-bottom: 5px; pointer-events: none; }
-        .comp-date-label { color: #f9d71c; font-weight: bold; }
-
-        .progress-area { height: 50px; background: rgba(255,255,255,0.05); border-radius: 25px; margin: 15px 0; position: relative; display: flex; align-items: center; padding: 0 15px; overflow: hidden; pointer-events: none; }
-        .moving-icon { position: absolute; font-size: 24px; transition: left 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 3; filter: drop-shadow(0 0 5px rgba(255,255,255,0.5)); }
+        .progress-area { height: 50px; background: rgba(255,255,255,0.05); border-radius: 25px; margin: 15px 0; position: relative; display: flex; align-items: center; padding: 0 15px; overflow: hidden; }
+        .moving-icon { position: absolute; font-size: 24px; transition: left 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 3; }
         
         .item-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-        .item { font-size: 28px; cursor: pointer; filter: grayscale(100%) opacity(0.3); transition: 0.2s; user-select: none; position: relative; z-index: 30; }
+        .item { font-size: 28px; cursor: pointer; filter: grayscale(100%) opacity(0.3); transition: 0.2s; }
         .item.active { filter: grayscale(0%) opacity(1); transform: scale(1.1); }
-        
-        .memo-input { width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid #444; color: #fff; padding: 10px; border-radius: 8px; margin-top: 15px; font-size: 0.9rem; position: relative; z-index: 30; }
+        .memo-input { width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid #444; color: #fff; padding: 10px; border-radius: 8px; margin-top: 15px; }
+        .date-info { font-size: 0.75rem; color: #aaa; margin-bottom: 5px; }
     </style>
 </head>
 <body>
-
     <div id="stars-container"></div>
-
     <h2>💖 나의 성장 플래너</h2>
-
     <div class="container">
         <div class="stats-dashboard">
             <div style="font-weight: bold;">🏆 전체 달성률 <span id="percent-text">0%</span></div>
@@ -114,163 +64,167 @@
                 <span>완료 목표: <span id="comp-goals">0</span>개</span>
             </div>
         </div>
-
         <div class="input-group">
             <input type="text" id="goalTitle" placeholder="목표 이름" style="flex:1;">
             <input type="number" id="goalCount" placeholder="개수" style="width:50px;">
             <select id="themeSelect">
+                <option value="bride">👰‍♀️ 결혼식 입장</option>
+                <option value="groom">🤵‍♂️ 결혼식 입장</option>
                 <option value="dog">🐕 강아지 산책</option>
                 <option value="cat">🐈 고양이</option>
                 <option value="water">💧 물 마시기</option>
                 <option value="flower">🌸 꽃 산책</option>
                 <option value="love">💖 사랑</option>
-                <option value="nursery">🧸 아기자기한 방</option>
-                <option value="garden">🦋 비밀의 정원</option>
-                <option value="baking">🧁 달콤한 베이킹</option>
-                <option value="princess">👑 공주님의 성</option>
                 <option value="space">🚀 우주여행</option>
             </select>
             <button onclick="createNewGoal()">추가</button>
         </div>
-
         <div id="goalList"></div>
     </div>
 
     <script>
-        // 1. 별 배경 생성
         function createStars() {
             const container = document.getElementById('stars-container');
+            container.innerHTML = '';
             for (let i = 0; i < 80; i++) {
                 const star = document.createElement('div');
                 star.className = 'star';
                 const size = Math.random() * 3;
                 star.style.width = star.style.height = `${size}px`;
-                star.style.top = `${Math.random() * 100}vh`;
+                star.style.top = `${Math.random() * 100}vh`; 
                 star.style.left = `${Math.random() * 100}vw`;
                 star.style.animationDuration = `${Math.random() * 3 + 2}s`;
-                star.style.animationDelay = `${Math.random() * 5}s`;
                 container.appendChild(star);
             }
         }
         createStars();
 
-        // 2. 폭죽 효과
-        function launchConfetti(emoji, x, y) {
-            const count = 25;
+        function launchConfetti(emoji, x, y, isBig = false) {
+            const count = isBig ? 45 : 20;
             for (let i = 0; i < count; i++) {
                 const c = document.createElement('div');
                 c.className = 'confetti';
                 c.innerText = emoji;
-                c.style.left = `${x}px`;
-                c.style.top = `${y}px`;
+                c.style.left = `${x}px`; c.style.top = `${y}px`;
                 const angle = Math.random() * Math.PI * 2;
-                const dist = Math.random() * 200 + 50;
+                const dist = isBig ? (Math.random() * 350 + 150) : (Math.random() * 150 + 50);
                 c.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
                 c.style.setProperty('--dy', `${Math.sin(angle) * dist}px`);
-                c.style.animationDuration = `${Math.random() * 1 + 0.5}s`;
+                c.style.animationDuration = `${Math.random() * 1 + 0.6}s`;
                 document.body.appendChild(c);
                 c.onanimationend = () => c.remove();
             }
         }
 
         const themes = {
+            bride: { start: '⛪', moving: '👰‍♀️', end: '💍', item: '🔔', reverse: false },
+            groom: { start: '⛪', moving: '🤵‍♂️', end: '💍', item: '🔔', reverse: false },
             dog: { start: '🌳', moving: '🐕', end: '🏠', item: '🐾', reverse: true },
-            cat: { start: '🐟', moving: '🐈', end: '📦', item: '🧶', reverse: true },
-            water: { start: '🌊', moving: '🏃', end: '🌵', item: '💧', reverse: true },
+            cat: { start: '📦', moving: '🐈', end: '🐟', item: '🧶', reverse: true },
+            water: { start: '🌵', moving: '🏃', end: '🌊', item: '💧', reverse: true },
             flower: { start: '🌻', moving: '🚶‍♀️', end: '🌱', item: '🌸', reverse: true },
-            love: { start: '💘', moving: '🏃‍♂️', end: '💌', item: '❤️', reverse: true },
-            nursery: { start: '🍼', moving: '🧸', end: '🏡', item: '🎈', reverse: true },
-            garden: { start: '🌿', moving: '🦋', end: '🌸', item: '🌷', reverse: true },
-            baking: { start: '🥚', moving: '👩‍🍳', end: '🎂', item: '🧁', reverse: true },
-            princess: { start: '🏰', moving: '👸', end: '👑', item: '💎', reverse: true },
+            love: { start: '💌', moving: '🏃‍♂️', end: '💘', item: '❤️', reverse: true },
             space: { start: '🌑', moving: '🚀', end: '🌕', item: '⭐', reverse: false }
         };
 
         let goals = JSON.parse(localStorage.getItem('myGoals')) || [];
         let dragItem = null;
 
-        // 3. 목표 추가
         function createNewGoal() {
             const title = document.getElementById('goalTitle').value;
             const count = parseInt(document.getElementById('goalCount').value);
             const theme = document.getElementById('themeSelect').value;
             if(!title || !count) return alert("내용을 채워주세요!");
             
-            goals.push({
+            goals.unshift({
                 id: Date.now(), title, total: count, current: 0, theme,
                 checked: new Array(count).fill(false), memo: "",
                 startDate: new Date().toISOString().split('T')[0], compDate: ""
             });
             saveAndRender();
-            document.getElementById('goalTitle').value = "";
-            document.getElementById('goalCount').value = "";
+            document.getElementById('goalTitle').value = ""; document.getElementById('goalCount').value = "";
         }
 
-        // 4. 아이템 토글
         function toggleItem(e, id, idx) {
             e.stopPropagation();
             const g = goals.find(x => x.id === id);
+            if(!g) return;
+
             const wasDone = g.current === g.total;
             g.checked[idx] = !g.checked[idx];
             g.current = g.checked.filter(v => v).length;
             
-            if (g.current === g.total && !wasDone) {
+            const isNowDone = g.current === g.total;
+            const themeInfo = themes[g.theme];
+
+            // 진행 폭죽 제거됨 (요청사항)
+
+            if (isNowDone && !wasDone) {
                 g.compDate = new Date().toISOString().split('T')[0];
-                launchConfetti(themes[g.theme].end, e.clientX, e.clientY);
-            } else if (g.current !== g.total) {
+                
+                // 완료 시 도착지(end 아이콘 위치)에서 폭죽 터짐
+                setTimeout(() => {
+                    const card = document.getElementById(`card-${id}`);
+                    if(!card) return;
+                    const progressArea = card.querySelector('.progress-area');
+                    const rect = progressArea.getBoundingClientRect();
+                    
+                    // 테마별 end 아이콘 위치 계산
+                    const fireworkX = themeInfo.reverse ? rect.left + 30 : rect.right - 30;
+                    const fireworkY = rect.top + rect.height / 2;
+                    
+                    launchConfetti(themeInfo.end, fireworkX, fireworkY, true);
+                }, 100);
+                
+                setTimeout(() => {
+                    sortGoals();
+                    saveAndRender();
+                }, 800);
+            } else if (!isNowDone) {
                 g.compDate = "";
             }
             saveAndRender();
         }
 
-        // 5. 드래그 앤 드롭 (마우스 & 터치 통합)
+        function sortGoals() {
+            const processing = goals.filter(g => g.current < g.total).sort((a,b) => b.id - a.id);
+            const completed = goals.filter(g => g.current === g.total).sort((a,b) => b.id - a.id);
+            goals = [...processing, ...completed];
+        }
+
         function initDragEvents(card) {
-            // 마우스 드래그
-            card.addEventListener('mousedown', (e) => {
+            const handleStart = (e) => {
                 if(e.target.closest('.item, .delete-btn, .memo-input')) return;
-                startDrag(card);
-            });
-
-            // 터치 드래그
-            card.addEventListener('touchstart', (e) => {
-                if(e.target.closest('.item, .delete-btn, .memo-input')) return;
-                startDrag(card);
-            }, {passive: false});
+                dragItem = card;
+                card.classList.add('dragging');
+            };
+            card.addEventListener('mousedown', handleStart);
+            card.addEventListener('touchstart', (e) => handleStart(e.touches[0]), {passive: false});
         }
-
-        function startDrag(card) {
-            dragItem = card;
-            card.classList.add('dragging');
-        }
-
-        document.addEventListener('mousemove', handleMove);
-        document.addEventListener('touchmove', (e) => handleMove(e.touches[0]), {passive: false});
 
         function handleMove(e) {
             if(!dragItem) return;
-            if(e.preventDefault) e.preventDefault();
-            
             const list = document.getElementById('goalList');
-            const afterElement = getDragAfterElement(list, e.clientY);
+            const touchY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+            const afterElement = getDragAfterElement(list, touchY);
             if (afterElement == null) list.appendChild(dragItem);
             else list.insertBefore(dragItem, afterElement);
         }
 
-        document.addEventListener('mouseup', endDrag);
-        document.addEventListener('touchend', endDrag);
-
         function endDrag() {
             if(!dragItem) return;
             dragItem.classList.remove('dragging');
-            dragItem = null;
-            
-            // 변경된 순서 반영하여 데이터 저장
             const currentIds = [...document.querySelectorAll('.goal-card')].map(c => parseInt(c.id.replace('card-', '')));
-            const newGoals = currentIds.map(id => goals.find(g => g.id === id));
-            goals = newGoals;
+            goals = currentIds.map(id => goals.find(g => g.id === id));
             localStorage.setItem('myGoals', JSON.stringify(goals));
+            dragItem = null;
             updateStats();
         }
+
+        document.addEventListener('mousemove', handleMove);
+        document.addEventListener('touchmove', handleMove, {passive: false});
+        document.addEventListener('mouseup', endDrag);
+        document.addEventListener('touchend', endDrag);
 
         function getDragAfterElement(container, y) {
             const draggableElements = [...container.querySelectorAll('.goal-card:not(.dragging)')];
@@ -282,30 +236,30 @@
             }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
 
-        // 6. 렌더링 및 통계
         function saveAndRender() {
             localStorage.setItem('myGoals', JSON.stringify(goals));
             const list = document.getElementById('goalList');
             list.innerHTML = '';
             
             goals.forEach(g => {
-                const t = themes[g.theme];
+                const t = themes[g.theme] || themes.love;
                 const isComp = g.current === g.total;
-                const pos = t.reverse ? 85 - (g.current/g.total)*77 : 8 + (g.current/g.total)*77;
+                const progressRatio = g.total === 0 ? 0 : g.current / g.total;
+                const pos = t.reverse ? 85 - (progressRatio * 77) : 8 + (progressRatio * 77);
 
                 const cardHtml = `
                     <div class="goal-card ${isComp ? 'completed' : ''}" id="card-${g.id}">
                         <button class="delete-btn" onclick="removeGoal(event, ${g.id})">✕</button>
-                        <div class="date-info">시작: ${g.startDate}${isComp ? ` <span class="comp-date-label">| 완료: ${g.compDate}</span>` : ''}</div>
-                        <h3 style="margin:0; pointer-events:none;">${g.title}</h3>
-                        <div class="progress-area">
+                        <div class="date-info">시작: ${g.startDate}${isComp ? ` | 완료: ${g.compDate}` : ''}</div>
+                        <h3 style="margin:0;">${g.title}</h3>
+                        <div class="progress-area" style="pointer-events:none;">
                             <span>${t.reverse ? t.end : t.start}</span>
                             <span class="moving-icon" style="left:${pos}%">${t.moving}</span>
                             <div style="flex:1"></div>
                             <span>${t.reverse ? t.start : t.end}</span>
                         </div>
                         <div class="item-container">${g.checked.map((c, i) => `<span class="item ${c ? 'active' : ''}" onclick="toggleItem(event, ${g.id}, ${i})">${t.item}</span>`).join('')}</div>
-                        ${isComp ? `<input type="text" class="memo-input" placeholder="달성 소감..." value="${g.memo}" oninput="updateMemo(${g.id}, this.value)" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">` : ''}
+                        ${isComp ? `<input type="text" class="memo-input" placeholder="달성 소감..." value="${g.memo}" oninput="updateMemo(${g.id}, this.value)">` : ''}
                     </div>`;
                 list.insertAdjacentHTML('beforeend', cardHtml);
                 initDragEvents(document.getElementById(`card-${g.id}`));
@@ -315,19 +269,29 @@
 
         function updateStats() {
             const total = goals.length;
-            const completed = goals.filter(g => g.current === g.total && g.total > 0).length;
+            const completed = goals.filter(g => g.current === g.total).length;
             const per = total ? Math.round((completed / total) * 100) : 0;
-            
             document.getElementById('total-goals').innerText = total;
             document.getElementById('comp-goals').innerText = completed;
             document.getElementById('percent-text').innerText = per + "%";
             document.getElementById('total-bar').style.width = per + "%";
         }
 
-        function updateMemo(id, val) { goals.find(x => x.id === id).memo = val; localStorage.setItem('myGoals', JSON.stringify(goals)); }
-        function removeGoal(e, id) { e.stopPropagation(); if(confirm("삭제할까요?")) { goals = goals.filter(x => x.id !== id); saveAndRender(); } }
+        function updateMemo(id, val) { 
+            const g = goals.find(x => x.id === id);
+            if(g) g.memo = val; 
+            localStorage.setItem('myGoals', JSON.stringify(goals)); 
+        }
 
-        saveAndRender();
+        function removeGoal(e, id) { 
+            e.stopPropagation(); 
+            if(confirm("삭제할까요?")) { 
+                goals = goals.filter(x => x.id !== id); 
+                saveAndRender(); 
+            } 
+        }
+
+        window.onload = saveAndRender;
     </script>
 </body>
 </html>
